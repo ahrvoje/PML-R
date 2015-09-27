@@ -1,0 +1,189 @@
+Fitness exercise quality prediction using public dataset
+=========================================
+###   Practical Machine Learning Project
+####  Hrvoje Abraham
+####  27.09.2015.
+
+Introduction
+------------
+In this project we will try to predict the quality of the fitness exercises using the machine learning model build using publicly available data set [1]. The data contains accelerator measurements of professionaly executed exercises in 5 quality levels. The model will learn to distinguish between various quality levels and will be able to predict whether the exercise is done in a good or a bad way.
+
+Some initializing steps first:
+
+```{r}
+rm(list=ls())
+memory.limit()
+```
+
+```{r}
+library(caret)
+library(randomForest)
+```
+
+```{r}
+set.seed(2508978)
+```
+
+Data
+----
+Importing the data from local disk into *data* and *predictingData* variables.
+
+```{r}
+data = read.csv("d:\\store\\Coursera\\PracticalMachineLearning\\project\\pml-training.csv")
+dim(data)
+
+predictingData = read.csv("d:\\store\\Coursera\\PracticalMachineLearning\\project\\pml-testing.csv")
+dim(predictingData)
+```
+
+To have a glimpse of what are we dealing with, lets print 4 sets of all the features.
+
+```{r}
+options(width=120)
+t(data[1:4, ])
+```
+
+Not all features contain useful data. We can manually select ones which contain meaningful numerical content, but avoiding timestamps and other data not correlated to the accelerator measurements.
+
+```{r}
+cols = c('roll_belt', 'pitch_belt', 'yaw_belt', 'total_accel_belt', 'gyros_belt_x', 'gyros_belt_y',
+         'gyros_belt_z', 'accel_belt_x', 'accel_belt_y', 'accel_belt_z', 'magnet_belt_x', 'magnet_belt_y',
+         'magnet_belt_z', 'roll_arm', 'pitch_arm', 'yaw_arm', 'total_accel_arm', 'gyros_arm_x', 'gyros_arm_y',
+         'gyros_arm_z', 'accel_arm_x', 'accel_arm_y', 'accel_arm_z', 'magnet_arm_x', 'magnet_arm_y',
+         'magnet_arm_z', 'roll_dumbbell', 'pitch_dumbbell', 'yaw_dumbbell', 'total_accel_dumbbell',
+         'gyros_dumbbell_x', 'gyros_dumbbell_y', 'gyros_dumbbell_z', 'accel_dumbbell_x', 'accel_dumbbell_y',
+         'accel_dumbbell_z', 'magnet_dumbbell_x', 'magnet_dumbbell_y', 'magnet_dumbbell_z', 'roll_forearm',
+         'pitch_forearm', 'yaw_forearm', 'total_accel_forearm', 'gyros_forearm_x', 'gyros_forearm_y',
+         'gyros_forearm_z', 'accel_forearm_x', 'accel_forearm_y', 'accel_forearm_z', 'magnet_forearm_x',
+         'magnet_forearm_y', 'magnet_forearm_z')
+```
+
+Check if some of the reduced data contain non-numeric inputs, hope not...
+
+```{r}
+usingData = data[, c(cols,'classe')]
+cat("NA in usingData:", any(is.na(usingData) == TRUE))
+
+predicting = predictingData[, cols]
+cat("NA in predictingData:", any(is.na(predicting) == TRUE))
+```
+
+Looks everything is OK.
+
+During the detailed data analysis I noticed some channels contain weird values. You can see the outliers in the following plots.
+
+```{r}
+plot(usingData$gyros_dumbbell_x)
+plot(usingData$magnet_dumbbell_y)
+```
+
+I believe these are the result of some kind of measurement errors, so I removed them from the data.
+
+```{r}
+outlier1 = which(usingData$gyros_dumbbell_x < -200)
+outlier2 = which(usingData$magnet_dumbbell_y < -3000)
+usingData = usingData[-c(outlier1, outlier2), ]
+```
+
+Training
+--------
+Now we split the data into training and testing sets. Roughly 60% of the data is used for the training set, and the rest for the testing set.
+
+```{r}
+trainingCases = createDataPartition(usingData$classe, p = 0.6, list = FALSE)
+
+training = usingData[trainingCases, ]
+dim(training)
+
+testing = usingData[-trainingCases, ]
+dim(testing)
+```
+
+Every since I read one great article on classifiers benchmarking (“Do We Need Hundreds of Classifiers to Solve Real World Classification Problems?”) [2], I always try with some Random Forest classifier first. This article is great, I highly recommend it to everybody even remotely interested in Machine Learning.
+
+I tried using caret's rf (had some fancy features on my mind), but it was too slow. I ended up with 'internal' randomForest, with sweet spot at ntree=1000. The training takes 2-3 minutes.
+
+```{r}
+ntree=1000
+
+time0 = Sys.time()
+rfModel = randomForest(classe ~ ., data = training, ntree = ntree, importance = TRUE)
+Sys.time() - time0
+```
+
+Testing / validating
+--------------------
+Once we have the model, lets' have a looks what we got. One of many good things about RandomForest classifiers is their accuracy can be 'self-estimated' [3], out-of-the-box (OOB) error is *0.7%*. That's more than nice, we can work with that!
+
+```{r}
+rfModel
+```
+
+we can get more OOB info by applying *predict* to the model without specifing new data. This way we get an accuracy of *99.3%*, some info on sensitivity, specificity...
+
+```{r}
+oob = predict(rfModel)
+confusionMatrix(oob, training$classe)
+```
+
+Applying the model to the testing set we get the confirmation of the accuracy (99.3%). Rest of the statistics is rather similar to OOB estimation, once more RandomForest OOB is proven to be a rather good and unbiased methodology. Because of this, some say you don't have to use testing set at all for Random Forest models, and rely on OOB estimations alone, but I take that with a grain of salt.
+
+```{r}
+testingResult = predict(rfModel, newdata=testing[, names(testing) != "classe"])
+confusionMatrix(testingResult, testing$classe)
+```
+
+Predicting
+-----------
+Now we can use the model to predict the quality of the exercises in predicting data set. At this point we will use another Random Forest trick, and that is setting *predict.all* variable to *TRUE*. This way the model will preserve prediction information for all trees in the model. We will use it later, as you'll see in a few moments.
+
+```{r}
+result = predict(rfModel, newdata=predicting, predict.all = TRUE)
+result$aggregate
+```
+
+So this is my aggregate prediction result. I surely hope it coincides with the prediction of the authors of this course!
+
+Now we'll make some use of the prediction data of every single tree in RandomForest mentioned before. First we define the function which counts the votes trees made for some prediction case (exercise). This will tell use whether it was a clear decision, i.e. how many trees voted for some of the options (quality classes). This number is normalized with the number of trees in the model (*ntree*), this way we get the percentages of votes for any of the classes.
+
+```{r}
+
+ratio = function(r, classe) {
+  return( length(which(r == classe)) / ntree )
+}
+
+abcde = function(r) {
+  ra = ratio(r, "A")
+  rb = ratio(r, "B")
+  rc = ratio(r, "C")
+  rd = ratio(r, "D")
+  re = ratio(r, "E")
+
+  return( c(ra, rb, rc, rd, re) )
+}
+
+probs = data.frame(c(), c(), c(), c(), c())
+
+for (i in 1:20) {
+  probs = rbind(probs, abcde(result$individual[i,]))
+}
+```
+
+Finally, this is the statistics. If the model is good, the decisions should be clear, done with high percentage of votes for some single class. This really is the case. This is also one of Randomforest features I really like, you can always get it without much additional effort and you get some sense of your result.
+
+```{r}
+colnames(probs) = c("A", "B", "C", "D", "E")
+probs
+
+levelplot(data.matrix(probs))
+```
+
+The end! Make sure you have a look at [2]...
+
+References
+----------
+[1] Ugulino, W.; Cardador, D.; Vega, K.; Velloso, E.; Milidiu, R.; Fuks, H. Wearable Computing: Accelerometers' Data Classification of Body Postures and Movements. Proceedings of 21st Brazilian Symposium on Artificial Intelligence. Advances in Artificial Intelligence - SBIA 2012. In: Lecture Notes in Computer Science. , pp. 52-61. Curitiba, PR: Springer Berlin / Heidelberg, 2012. ISBN 978-3-642-34458-9. DOI: 10.1007/978-3-642-34459-6_6. 
+
+[2] Fernández-Delgado, Manuel, et al. "Do we need hundreds of classifiers to solve real world classification problems?." The Journal of Machine Learning Research 15.1 (2014): 3133-3181.
+
+[3] https://www.stat.berkeley.edu/~breiman/RandomForests/cc_home.htm#ooberr
