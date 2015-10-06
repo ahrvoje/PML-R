@@ -6,7 +6,7 @@ Fitness exercise quality prediction using public dataset
 
 Introduction
 ------------
-In this project we will predict the quality of fitness exercises using machine learning model built using publicly available data set [1]. The data contains accelerator measurements of a set of professionaly executed exercises in 5 quality levels. The model will learn to distinguish between various quality levels and will be able to predict whether the exercise is done in a good or a bad way.
+In this project we will predict the quality of fitness exercises using machine learning model built using publicly available data set [1]. The data contain accelerator measurements of a set of professionaly executed exercises in 5 quality levels. The model will learn to distinguish between various quality levels and will be able to predict whether the exercise is done in a good or a bad way.
 
 Some initializing steps first:
 
@@ -26,7 +26,7 @@ set.seed(2508978)
 
 Data
 ----
-Importing the data from publicly available link into *data* and *predictingData* variables.
+Importing the data into *data* and *predictingData* variables.
 
 ```{r}
 data = read.csv("http://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv")
@@ -43,7 +43,7 @@ options(width=120)
 t(data[1:4, ])
 ```
 
-Some features does not contain useful data. We can manually select others containing meaningful numerical content, but avoiding timestamps and other data not rrelated to accelerator measurements.
+Some features does not contain any prediction value. We can manually select others containing meaningful numerical content, but avoiding timestamps and other inputs not related to accelerator measurements.
 
 ```{r}
 cols = c('roll_belt', 'pitch_belt', 'yaw_belt', 'total_accel_belt', 'gyros_belt_x', 'gyros_belt_y',
@@ -58,14 +58,14 @@ cols = c('roll_belt', 'pitch_belt', 'yaw_belt', 'total_accel_belt', 'gyros_belt_
          'magnet_forearm_y', 'magnet_forearm_z')
 ```
 
-Check if some of the reduced data contain invalid data, hope not...
+Check if some of the reduced data contain invalid inputs, hope not...
 
 ```{r}
 usingData = data[, c(cols,'classe')]
 cat("NA in usingData:", any(is.na(usingData) == TRUE))
 
 predicting = predictingData[, cols]
-cat("NA in predictingData:", any(is.na(predicting) == TRUE))
+cat("NA in predicting:", any(is.na(predicting) == TRUE))
 ```
 
 Looks everything is OK.
@@ -99,7 +99,7 @@ testing = usingData[-trainingCases, ]
 dim(testing)
 ```
 
-Ever since I read a great article on benchmarking many currently available classifiers (“Do We Need Hundreds of Classifiers to Solve Real World Classification Problems?”) [2], I always try with some Random Forest classifier first. I highly recommend it to everyone even remotely interested in Machine Learning.
+Ever since I read this great article on benchmarking many currently available classifiers (“Do We Need Hundreds of Classifiers to Solve Real World Classification Problems?”) [2], I always try with some Random Forest classifier first. I highly recommend it to everyone even remotely interested in Machine Learning.
 
 I tried using caret's rf (had some fancy features on my mind), but it was too slow. I ended up with 'internal' randomForest, with sweet spot at ntree=1000. Training process takes about 2 minutes.
 
@@ -113,7 +113,7 @@ Sys.time() - time0
 
 Testing / validating
 --------------------
-Once we have the model, let's have a looks what we got. One of many good things about RandomForest classifiers is that their accuracy can be 'self-estimated' [3], out-of-the-box (OOB) error is *0.7%*. That's more than nice, we can work with that!
+Once we have the model, let's have a looks what we got. One of many good things about RandomForest classifiers is that model accuracy can be 'self-estimated' [3]. In our case out-of-the-box (OOB) error is *0.7%*. That's more than nice, we can work with that!
 
 ```{r}
 rfModel
@@ -135,16 +135,16 @@ confusionMatrix(testingResult, testing$classe)
 
 Predicting
 -----------
-Now we can use the model to predict the quality of the exercises in predicting data set. At this point we will use another Random Forest trick by setting *predict.all* variable to *TRUE*. This way the model will preserve prediction information of all trees in the model. We will use it later, as you'll see in a few moments.
+Now we can use the model to predict the quality of the exercises in predicting data set. At this point we will use another Random Forest trick by setting *predict.all* variable to *TRUE*. This way the model will preserve prediction information for all trees in the model. We will use it later, as you'll see in a few moments.
 
 ```{r}
 result = predict(rfModel, newdata=predicting, predict.all = TRUE)
 result$aggregate
 ```
 
-So this is my aggregate prediction result. Project submission checker gives it 100%  approval rating.
+So this is my aggregate prediction result. Project submission checker gives it 100% approval rating.
 
-Now we'll make some use of the prediction data of every single tree in RandomForest mentioned before. First we define the function which counts the votes trees made for some prediction case (exercise). This will tell use whether it was a clear decision, i.e. how many trees voted for some of the options (quality classes). This number is normalized with the number of trees in the model (*ntree*), this way we get the percentages of votes for any of the classes. This is also one of Randomforest features I really like, you can always get it without much additional effort and you get some sense of your result.
+Now we'll make some use of the prediction data of every single tree in RandomForest mentioned before. First we define function that counts the votes trees made for some prediction case (exercise). This will tell use whether it was a clear decision, i.e. how many trees voted for some of the options (quality classes). This number is normalized with the number of trees in the model (*ntree*), this way we get the percentages of votes for any of the classes. This is also one of Randomforest features I really like, you can always get it without much additional effort and you get some sense of your result.
 
 ```{r}
 

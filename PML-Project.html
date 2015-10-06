@@ -74,7 +74,7 @@ img {
 </div>
 <div id="introduction" class="section level2">
 <h2>Introduction</h2>
-<p>In this project we will predict the quality of fitness exercises using machine learning model built using publicly available data set [1]. The data contains accelerator measurements of a set of professionaly executed exercises in 5 quality levels. The model will learn to distinguish between various quality levels and will be able to predict whether the exercise is done in a good or a bad way.</p>
+<p>In this project we will predict the quality of fitness exercises using machine learning model built using publicly available data set [1]. The data contain accelerator measurements of a set of professionaly executed exercises in 5 quality levels. The model will learn to distinguish between various quality levels and will be able to predict whether the exercise is done in a good or a bad way.</p>
 <p>Some initializing steps first:</p>
 <pre class="r"><code>rm(list=ls())
 memory.limit()</code></pre>
@@ -89,7 +89,7 @@ memory.limit()</code></pre>
 </div>
 <div id="data" class="section level2">
 <h2>Data</h2>
-<p>Importing the data from publicly available link into <em>data</em> and <em>predictingData</em> variables.</p>
+<p>Importing the data into <em>data</em> and <em>predictingData</em> variables.</p>
 <pre class="r"><code>data = read.csv(&quot;http://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv&quot;)
 dim(data)</code></pre>
 <pre><code>## [1] 19622   160</code></pre>
@@ -260,7 +260,7 @@ t(data[1:4, ])</code></pre>
 ## magnet_forearm_y         &quot;654&quot;              &quot;661&quot;              &quot;658&quot;              &quot;658&quot;             
 ## magnet_forearm_z         &quot;476&quot;              &quot;473&quot;              &quot;469&quot;              &quot;469&quot;             
 ## classe                   &quot;A&quot;                &quot;A&quot;                &quot;A&quot;                &quot;A&quot;</code></pre>
-<p>Some features does not contain useful data. We can manually select others containing meaningful numerical content, but avoiding timestamps and other data not rrelated to accelerator measurements.</p>
+<p>Some features does not contain any prediction value. We can manually select others containing meaningful numerical content, but avoiding timestamps and other inputs not related to accelerator measurements.</p>
 <pre class="r"><code>cols = c('roll_belt', 'pitch_belt', 'yaw_belt', 'total_accel_belt', 'gyros_belt_x', 'gyros_belt_y',
          'gyros_belt_z', 'accel_belt_x', 'accel_belt_y', 'accel_belt_z', 'magnet_belt_x', 'magnet_belt_y',
          'magnet_belt_z', 'roll_arm', 'pitch_arm', 'yaw_arm', 'total_accel_arm', 'gyros_arm_x', 'gyros_arm_y',
@@ -271,13 +271,13 @@ t(data[1:4, ])</code></pre>
          'pitch_forearm', 'yaw_forearm', 'total_accel_forearm', 'gyros_forearm_x', 'gyros_forearm_y',
          'gyros_forearm_z', 'accel_forearm_x', 'accel_forearm_y', 'accel_forearm_z', 'magnet_forearm_x',
          'magnet_forearm_y', 'magnet_forearm_z')</code></pre>
-<p>Check if some of the reduced data contain invalid data, hope not…</p>
+<p>Check if some of the reduced data contain invalid inputs, hope not…</p>
 <pre class="r"><code>usingData = data[, c(cols,'classe')]
 cat(&quot;NA in usingData:&quot;, any(is.na(usingData) == TRUE))</code></pre>
 <pre><code>## NA in usingData: FALSE</code></pre>
 <pre class="r"><code>predicting = predictingData[, cols]
-cat(&quot;NA in predictingData:&quot;, any(is.na(predicting) == TRUE))</code></pre>
-<pre><code>## NA in predictingData: FALSE</code></pre>
+cat(&quot;NA in predicting:&quot;, any(is.na(predicting) == TRUE))</code></pre>
+<pre><code>## NA in predicting: FALSE</code></pre>
 <p>Looks everything is OK.</p>
 <p>During the detailed data analysis I noticed some channels contain weird values. You can see the outliers in the following plots.</p>
 <pre class="r"><code>plot(usingData$gyros_dumbbell_x)</code></pre>
@@ -300,18 +300,18 @@ dim(training)</code></pre>
 <pre class="r"><code>testing = usingData[-trainingCases, ]
 dim(testing)</code></pre>
 <pre><code>## [1] 7845   53</code></pre>
-<p>Ever since I read a great article on benchmarking many currently available classifiers (“Do We Need Hundreds of Classifiers to Solve Real World Classification Problems?”) [2], I always try with some Random Forest classifier first. I highly recommend it to everyone even remotely interested in Machine Learning.</p>
+<p>Ever since I read this great article on benchmarking many currently available classifiers (“Do We Need Hundreds of Classifiers to Solve Real World Classification Problems?”) [2], I always try with some Random Forest classifier first. I highly recommend it to everyone even remotely interested in Machine Learning.</p>
 <p>I tried using caret’s rf (had some fancy features on my mind), but it was too slow. I ended up with ‘internal’ randomForest, with sweet spot at ntree=1000. Training process takes about 2 minutes.</p>
 <pre class="r"><code>ntree=1000
 
 time0 = Sys.time()
 rfModel = randomForest(classe ~ ., data = training, ntree = ntree, importance = TRUE)
 Sys.time() - time0</code></pre>
-<pre><code>## Time difference of 2.22126 mins</code></pre>
+<pre><code>## Time difference of 2.051584 mins</code></pre>
 </div>
 <div id="testing-validating" class="section level2">
 <h2>Testing / validating</h2>
-<p>Once we have the model, let’s have a looks what we got. One of many good things about RandomForest classifiers is that their accuracy can be ‘self-estimated’ [3], out-of-the-box (OOB) error is <em>0.7%</em>. That’s more than nice, we can work with that!</p>
+<p>Once we have the model, let’s have a looks what we got. One of many good things about RandomForest classifiers is that model accuracy can be ‘self-estimated’ [3]. In our case out-of-the-box (OOB) error is <em>0.7%</em>. That’s more than nice, we can work with that!</p>
 <pre class="r"><code>rfModel</code></pre>
 <pre><code>## 
 ## Call:
@@ -399,14 +399,14 @@ confusionMatrix(testingResult, testing$classe)</code></pre>
 </div>
 <div id="predicting" class="section level2">
 <h2>Predicting</h2>
-<p>Now we can use the model to predict the quality of the exercises in predicting data set. At this point we will use another Random Forest trick by setting <em>predict.all</em> variable to <em>TRUE</em>. This way the model will preserve prediction information of all trees in the model. We will use it later, as you’ll see in a few moments.</p>
+<p>Now we can use the model to predict the quality of the exercises in predicting data set. At this point we will use another Random Forest trick by setting <em>predict.all</em> variable to <em>TRUE</em>. This way the model will preserve prediction information for all trees in the model. We will use it later, as you’ll see in a few moments.</p>
 <pre class="r"><code>result = predict(rfModel, newdata=predicting, predict.all = TRUE)
 result$aggregate</code></pre>
 <pre><code>##  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 
 ##  B  A  B  A  A  E  D  B  A  A  B  C  B  A  E  E  A  B  B  B 
 ## Levels: A B C D E</code></pre>
 <p>So this is my aggregate prediction result. Project submission checker gives it 100% approval rating.</p>
-<p>Now we’ll make some use of the prediction data of every single tree in RandomForest mentioned before. First we define the function which counts the votes trees made for some prediction case (exercise). This will tell use whether it was a clear decision, i.e. how many trees voted for some of the options (quality classes). This number is normalized with the number of trees in the model (<em>ntree</em>), this way we get the percentages of votes for any of the classes. This is also one of Randomforest features I really like, you can always get it without much additional effort and you get some sense of your result.</p>
+<p>Now we’ll make some use of the prediction data of every single tree in RandomForest mentioned before. First we define function that counts the votes trees made for some prediction case (exercise). This will tell use whether it was a clear decision, i.e. how many trees voted for some of the options (quality classes). This number is normalized with the number of trees in the model (<em>ntree</em>), this way we get the percentages of votes for any of the classes. This is also one of Randomforest features I really like, you can always get it without much additional effort and you get some sense of your result.</p>
 <pre class="r"><code>ratio = function(r, classe) {
   return( length(which(r == classe)) / ntree )
 }
