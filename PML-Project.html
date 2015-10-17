@@ -300,7 +300,7 @@ dim(training)</code></pre>
 <pre class="r"><code>testing = usingData[-trainingCases, ]
 dim(testing)</code></pre>
 <pre><code>## [1] 7845   53</code></pre>
-<p>Ever since I read this great article on benchmarking many currently available classifiers (“Do We Need Hundreds of Classifiers to Solve Real World Classification Problems?”) [2], I always try with some Random Forest classifier first. I highly recommend it to everyone even remotely interested in Machine Learning.</p>
+<p>Ever since I read this great article on benchmarking many currently available classifiers (“Do We Need Hundreds of Classifiers to Solve Real World Classification Problems?”) [2], I always try with some Random Forests classifier first. I highly recommend it to everyone even remotely interested in Machine Learning.</p>
 <p>I tried using caret’s rf (had some fancy features on my mind), but it was too slow. I ended up with ‘internal’ randomForest, with sweet spot at ntree=1000. Training process takes about 2 minutes.</p>
 <pre class="r"><code>ntree=1000
 
@@ -311,7 +311,7 @@ Sys.time() - time0</code></pre>
 </div>
 <div id="testing-validating" class="section level2">
 <h2>Testing / validating</h2>
-<p>Once we have the model, let’s have a looks what we got. One of many good things about RandomForest classifiers is that model accuracy can be ‘self-estimated’ [3]. In our case out-of-the-box (OOB) error is <em>0.7%</em>. That’s more than nice, we can work with that!</p>
+<p>Once we have the model, let’s have a looks what we got. One of many good things about Random Forests classifiers is that model accuracy can be ‘self-estimated’ [3]. In our case out-of-the-box (OOB) error is <em>0.7%</em>. That’s more than nice, we can work with that!</p>
 <pre class="r"><code>rfModel</code></pre>
 <pre><code>## 
 ## Call:
@@ -362,7 +362,7 @@ confusionMatrix(oob, training$classe)</code></pre>
 ## Detection Rate         0.2841   0.1923   0.1727   0.1612   0.1831
 ## Detection Prevalence   0.2849   0.1939   0.1759   0.1620   0.1833
 ## Balanced Accuracy      0.9990   0.9959   0.9932   0.9912   0.9978</code></pre>
-<p>Applying the model to the testing set we get the confirmation of the accuracy (99.3%). Rest of the statistics is rather similar to OOB estimation, so once more RandomForest OOB is proven to be a rather good and unbiased methodology. Because of this, some say one doesn’t have to use testing set at all for Random Forest models, and rely on OOB estimations alone, but I take that with a grain of salt.</p>
+<p>Applying the model to the testing set we get the confirmation of the accuracy (99.3%). Rest of the statistics is rather similar to OOB estimation, so once more Random Forests OOB is proven to be a rather good and unbiased methodology. Because of this, some say one doesn’t have to use testing set at all for Random Forests models, and rely on OOB estimations alone, but I take that with a grain of salt.</p>
 <pre class="r"><code>testingResult = predict(rfModel, newdata=testing[, names(testing) != &quot;classe&quot;])
 confusionMatrix(testingResult, testing$classe)</code></pre>
 <pre><code>## Confusion Matrix and Statistics
@@ -399,14 +399,14 @@ confusionMatrix(testingResult, testing$classe)</code></pre>
 </div>
 <div id="predicting" class="section level2">
 <h2>Predicting</h2>
-<p>Now we can use the model to predict the quality of the exercises in predicting data set. At this point we will use another Random Forest trick by setting <em>predict.all</em> variable to <em>TRUE</em>. This way the model will preserve prediction information for all trees in the model. We will use it later, as you’ll see in a few moments.</p>
+<p>Now we can use the model to predict the quality of the exercises in predicting data set. At this point we will use another Random Forests trick by setting <em>predict.all</em> variable to <em>TRUE</em>. This way the model will preserve prediction information for all trees in the model. We will use it later, as you’ll see in a few moments.</p>
 <pre class="r"><code>result = predict(rfModel, newdata=predicting, predict.all = TRUE)
 result$aggregate</code></pre>
 <pre><code>##  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 
 ##  B  A  B  A  A  E  D  B  A  A  B  C  B  A  E  E  A  B  B  B 
 ## Levels: A B C D E</code></pre>
 <p>So this is my aggregate prediction result. Project submission checker gives it 100% approval rating.</p>
-<p>Now we’ll make some use of the prediction data of every single tree in RandomForest mentioned before. First we define function that counts the votes trees made for some prediction case (exercise). This will tell use whether it was a clear decision, i.e. how many trees voted for some of the options (quality classes). This number is normalized with the number of trees in the model (<em>ntree</em>), this way we get the percentages of votes for any of the classes. This is also one of Randomforest features I really like, you can always get it without much additional effort and you get some sense of your result.</p>
+<p>Now we’ll make some use of the prediction data of every single tree in Random Forests model mentioned before. First we define function that counts the votes trees made for some prediction case (exercise). This will tell use whether it was a clear decision, i.e. how many trees voted for some of the options (quality classes). This number is normalized with the number of trees in the model (<em>ntree</em>), this way we get the percentages of votes for any of the classes. This is also one of Random Forests features I really like, you can always get it without much additional effort and you get some sense of your result.</p>
 <pre class="r"><code>ratio = function(r, classe) {
   return( length(which(r == classe)) / ntree )
 }
