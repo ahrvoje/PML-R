@@ -99,7 +99,7 @@ testing = usingData[-trainingCases, ]
 dim(testing)
 ```
 
-Ever since I read this great article on benchmarking many currently available classifiers (ìDo We Need Hundreds of Classifiers to Solve Real World Classification Problems?î) [2], I always try with some Random Forest classifier first. I highly recommend it to everyone even remotely interested in Machine Learning.
+Ever since I read this great article on benchmarking many currently available classifiers (‚ÄúDo We Need Hundreds of Classifiers to Solve Real World Classification Problems?‚Äù) [2], I always try with some Random Forests classifier first. I highly recommend it to everyone even remotely interested in Machine Learning.
 
 I tried using caret's rf (had some fancy features on my mind), but it was too slow. I ended up with 'internal' randomForest, with sweet spot at ntree=1000. Training process takes about 2 minutes.
 
@@ -113,7 +113,7 @@ Sys.time() - time0
 
 Testing / validating
 --------------------
-Once we have the model, let's have a looks what we got. One of many good things about RandomForest classifiers is that model accuracy can be 'self-estimated' [3]. In our case out-of-the-box (OOB) error is *0.7%*. That's more than nice, we can work with that!
+Once we have the model, let's have a looks what we got. One of many good things about Random Forests classifiers is that model accuracy can be 'self-estimated' [3]. In our case out-of-the-box (OOB) error is *0.7%*. That's more than nice, we can work with that!
 
 ```{r}
 rfModel
@@ -126,7 +126,7 @@ oob = predict(rfModel)
 confusionMatrix(oob, training$classe)
 ```
 
-Applying the model to the testing set we get the confirmation of the accuracy (99.3%). Rest of the statistics is rather similar to OOB estimation, so once more RandomForest OOB is proven to be a rather good and unbiased methodology. Because of this, some say one doesn't have to use testing set at all for Random Forest models, and rely on OOB estimations alone, but I take that with a grain of salt.
+Applying the model to the testing set we get the confirmation of the accuracy (99.3%). Rest of the statistics is rather similar to OOB estimation, so once more Random Forests OOB is proven to be a rather good and unbiased methodology. Because of this, some say one doesn't have to use testing set at all for Random Forests models, and rely on OOB estimations alone, but I take that with a grain of salt.
 
 ```{r}
 testingResult = predict(rfModel, newdata=testing[, names(testing) != "classe"])
@@ -135,7 +135,7 @@ confusionMatrix(testingResult, testing$classe)
 
 Predicting
 -----------
-Now we can use the model to predict the quality of the exercises in predicting data set. At this point we will use another Random Forest trick by setting *predict.all* variable to *TRUE*. This way the model will preserve prediction information for all trees in the model. We will use it later, as you'll see in a few moments.
+Now we can use the model to predict the quality of the exercises in predicting data set. At this point we will use another Random Forests trick by setting *predict.all* variable to *TRUE*. This way the model will preserve prediction information for all trees in the model. We will use it later, as you'll see in a few moments.
 
 ```{r}
 result = predict(rfModel, newdata=predicting, predict.all = TRUE)
@@ -144,7 +144,7 @@ result$aggregate
 
 So this is my aggregate prediction result. Project submission checker gives it 100% approval rating.
 
-Now we'll make some use of the prediction data of every single tree in RandomForest mentioned before. First we define function that counts the votes trees made for some prediction case (exercise). This will tell use whether it was a clear decision, i.e. how many trees voted for some of the options (quality classes). This number is normalized with the number of trees in the model (*ntree*), this way we get the percentages of votes for any of the classes. This is also one of Randomforest features I really like, you can always get it without much additional effort and you get some sense of your result.
+Now we'll make some use of the prediction data of every single tree in Random Forests model mentioned before. First we define function that counts the votes trees made for some prediction case (exercise). This will tell use whether it was a clear decision, i.e. how many trees voted for some of the options (quality classes). This number is normalized with the number of trees in the model (*ntree*), this way we get the percentages of votes for any of the classes. This is also one of Random Forests features I really like, you can always get it without much additional effort and you get some sense of your result.
 
 ```{r}
 
@@ -184,6 +184,6 @@ References
 ----------
 [1] Ugulino, W.; Cardador, D.; Vega, K.; Velloso, E.; Milidiu, R.; Fuks, H. Wearable Computing: Accelerometers' Data Classification of Body Postures and Movements. Proceedings of 21st Brazilian Symposium on Artificial Intelligence. Advances in Artificial Intelligence - SBIA 2012. In: Lecture Notes in Computer Science. , pp. 52-61. Curitiba, PR: Springer Berlin / Heidelberg, 2012. ISBN 978-3-642-34458-9. DOI: 10.1007/978-3-642-34459-6_6. 
 
-[2] Fern·ndez-Delgado, Manuel, et al. "Do we need hundreds of classifiers to solve real world classification problems?." The Journal of Machine Learning Research 15.1 (2014): 3133-3181.
+[2] Fern√°ndez-Delgado, Manuel, et al. "Do we need hundreds of classifiers to solve real world classification problems?." The Journal of Machine Learning Research 15.1 (2014): 3133-3181.
 
 [3] https://www.stat.berkeley.edu/~breiman/RandomForests/cc_home.htm#ooberr
